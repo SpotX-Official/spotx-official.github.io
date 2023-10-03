@@ -1,30 +1,67 @@
 function Test-InternetConnection {
+    function Connect {
+        param (
+            [string]$Domain
+        )
 
-    $pingServers = @("www.google.com", "www.microsoft.com", "www.apple.com", "www.ibm.com", "www.baidu.com")
-    $maxRetryCount = 3
-    $retryInterval = 5
-    $internetAvailable = $false
+        try {
+            $tcpClient80 = New-Object System.Net.Sockets.TcpClient
+            $tcpClient443 = New-Object System.Net.Sockets.TcpClient
 
-    for ($retry = 1; $retry -le $maxRetryCount; $retry++) {
-        foreach ($server in $pingServers) {
-            if (Test-Connection -ComputerName $server -Count 1 -Quiet) {
+            $tcpClient80.Connect($Domain, 80)
+            $tcpClient443.Connect($Domain, 443)
+
+            if ($tcpClient80.Connected -or $tcpClient443.Connected) {
+                return $true
+            }
+
+            $tcpClient80.Close()
+            $tcpClient443.Close()
+        }
+        catch {}
+
+        try {
+            $ping = Test-Connection -ComputerName $Domain -Count 1 -Quiet -ErrorAction Stop
+            if ($ping) {
+                return $true
+            }
+        }
+        catch {}
+
+        return $false
+    }
+
+    $domains = "www.google.com", "www.bing.com", "www.baidu.com", "yandex.com"
+    $maxRetryAttempts = 3
+    $retryPauseSeconds = 3
+    $retryCount = 0
+
+    do {
+        $internetAvailable = $false
+        foreach ($domain in $domains) {
+            $result = Connect -Domain $domain
+            if ($result) {
                 $internetAvailable = $true
                 break
             }
         }
 
         if ($internetAvailable) {
-            return
+            break
+        }
+
+        $retryCount++
+        if ($retryCount -lt $maxRetryAttempts) {
+            Write-Host "Retesting in $retryPauseSeconds seconds..."
+            Start-Sleep -Seconds $retryPauseSeconds
         }
         else {
-            Write-Host "Attempt $($retry): Internet connection is unavailable. Retrying in $retryInterval seconds..."
-            Start-Sleep -Seconds $retryInterval
+            Write-Host
+            Write-Warning "After $maxRetryAttempts attempts, no internet connection was detected. Exiting script."
+            pause
+            exit
         }
-    }
-    Write-Host
-    Write-Warning "Failed to establish an internet connection after $maxRetryCount attempts, script terminated."
-    pause
-    exit
+    } while ($retryCount -lt $maxRetryAttempts)
 }
 
 function Send-Cutt {
