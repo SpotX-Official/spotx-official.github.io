@@ -33,11 +33,14 @@ function Run-SpotX {
     $maxRetryCount = 3
     $retryInterval = 5
 
-    if ($mirror) { $url = 'https://spotx-official.github.io/SpotX/run.ps1' }
+    if ($mirror) { 
+        $url = 'https://spotx-official.github.io/SpotX/run.ps1' 
+        $params += " -m"
+    }
     else {
         $url = 'https://raw.githubusercontent.com/SpotX-Official/SpotX/main/run.ps1'
     }
-    
+
     for ($retry = 1; $retry -le $maxRetryCount; $retry++) {
         try {
             $response = iwr -useb $url
@@ -66,5 +69,4 @@ function Run-SpotX {
 }
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12;
-
 Run-SpotX -params $args
