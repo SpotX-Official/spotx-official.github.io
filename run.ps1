@@ -1,3 +1,9 @@
+param
+(
+    [Alias("m")]
+    [switch]$mirror
+)
+
 function Send-Cutt {
 
     $Uri = "https://cutt.ly/RwbSmBPM"
@@ -21,13 +27,17 @@ function Send-Cutt {
 function Run-SpotX {
 
     param(
-        $params
+        [string]$params
     )
 
     $maxRetryCount = 3
     $retryInterval = 5
-    $url = 'https://spotx-official.github.io/SpotX/run.ps1'
 
+    if ($mirror) { $url = 'https://spotx-official.github.io/SpotX/run.ps1' }
+    else {
+        $url = 'https://raw.githubusercontent.com/SpotX-Official/SpotX/main/run.ps1'
+    }
+    
     for ($retry = 1; $retry -le $maxRetryCount; $retry++) {
         try {
             $response = iwr -useb $url
@@ -50,10 +60,11 @@ function Run-SpotX {
 
     Write-Host
     Write-Warning "Failed to make the request after $maxRetryCount attempts, script terminated."
+    Write-Host $Error[0].Exception.Message
     pause
     exit
 }
 
-[Net.ServicePointManager]::SecurityProtocol = 3072
+[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12;
 
 Run-SpotX -params $args
