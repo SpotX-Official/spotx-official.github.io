@@ -4,26 +4,6 @@ param
     [switch]$mirror
 )
 
-function Send-Cutt {
-
-    $Uri = "https://cutt.ly/RwbSmBPM"
-    $maxRetryCount = 2
-    $retryInterval = 2
-
-    $retries = 0
-
-    while ($retries -lt $maxRetryCount) {
-        try {
-            return Invoke-WebRequest -Uri $Uri -UseBasicParsing
-        }
-        catch {
-            $retries++
-            Start-Sleep -Seconds $retryInterval
-        }
-    }
-    return $null
-}
-
 function Run-SpotX {
 
     param(
@@ -51,7 +31,6 @@ function Run-SpotX {
         }
 
         if ($StatusCode -eq 200) {
-            $null = Send-Cutt
             iex "& {$($response)} $params"
             return
         }
